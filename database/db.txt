@@ -1,0 +1,113 @@
+-- Create the database
+CREATE DATABASE IF NOT EXISTS fItneSS_us;
+USE fItneSS_us;
+
+-- Create the Users table
+CREATE TABLE Users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 为了完整性，这里是更新后的 Posts 表的完整定义
+CREATE TABLE Posts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    text TEXT,
+    related_workout VARCHAR(255),
+    views INT DEFAULT 0,
+    likes INT DEFAULT 0,
+    collections INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_post FOREIGN KEY (user_id) REFERENCES Users(id)
+);
+
+-- Create the Comments table
+CREATE TABLE Comments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    post_id INT NOT NULL,
+    user_id INT NOT NULL,
+    text TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_comment1 FOREIGN KEY (post_id) REFERENCES Posts(id),
+    CONSTRAINT fk_comment2 FOREIGN KEY (user_id) REFERENCES Users(id)
+);
+
+-- Create the LikedPosts table (for user-post likes relationship)
+CREATE TABLE LikedPosts (
+    user_id INT NOT NULL,
+    post_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, post_id),
+    CONSTRAINT fk_likedposts1 FOREIGN KEY (user_id) REFERENCES Users(id),
+    CONSTRAINT fk_likedposts2 FOREIGN KEY (post_id) REFERENCES Posts(id)
+);
+
+-- Create the CollectedPosts table (for user-post collections relationship)
+CREATE TABLE CollectedPosts (
+    user_id INT NOT NULL,
+    post_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, post_id),
+    CONSTRAINT fk_collectedposts1 FOREIGN KEY (user_id) REFERENCES Users(id),
+    CONSTRAINT fk_collectedposts2 FOREIGN KEY (post_id) REFERENCES Posts(id)
+);
+
+-- Create the ViewedPosts table (for user-post views relationship)
+CREATE TABLE ViewedPosts (
+    user_id INT NOT NULL,
+    post_id INT NOT NULL,
+    viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, post_id),
+    CONSTRAINT fk_viewedposts1 FOREIGN KEY (user_id) REFERENCES Users(id),
+    CONSTRAINT fk_viewedposts2 FOREIGN KEY (post_id) REFERENCES Posts(id)
+);
+
+-- Create the UserFollows table (for user-user follows relationship)
+CREATE TABLE UserFollows (
+    follower_id INT NOT NULL,
+    followed_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (follower_id, followed_id),
+    CONSTRAINT fk_userfollows1 FOREIGN KEY (follower_id) REFERENCES Users(id),
+    CONSTRAINT fk_userfollows2 FOREIGN KEY (followed_id) REFERENCES Users(id)
+);
+
+-- Create the WorkoutInformation table
+CREATE TABLE WorkoutInformation (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    workout_type VARCHAR(255),
+    duration INT,
+    calories_burned INT,
+    date DATE,
+    CONSTRAINT fk_workoutinformation FOREIGN KEY (user_id) REFERENCES Users(id)
+);
+
+-- 创建 Images 表
+CREATE TABLE Images (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    file_name VARCHAR(255) NOT NULL,
+    file_path VARCHAR(255) NOT NULL,
+    file_type VARCHAR(50),
+    file_size INT,
+    upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    image_metadata JSON
+);
+
+-- 创建 PostImages 表来建立 Posts 和 Images 之间的多对多关系
+CREATE TABLE PostImages (
+    post_id INT NOT NULL,
+    image_id INT NOT NULL,
+    image_order INT DEFAULT 0,  -- 用于定义图片在帖子中的顺序
+    CONSTRAINT fk_postimages1 PRIMARY KEY (post_id, image_id),
+    CONSTRAINT fk_postimages2 FOREIGN KEY (post_id) REFERENCES Posts(id) ON DELETE CASCADE,
+    CONSTRAINT fk_postimages3 FOREIGN KEY (image_id) REFERENCES Images(id) ON DELETE CASCADE
+);
+-- userbodyinfo
+CREATE TABLE Users_BodyInformation (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+);

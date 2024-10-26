@@ -1,0 +1,149 @@
+{
+    "message": "You need to lose 2.0 kg to reach your target weight.",
+    "input_params": {
+      "gender": "male",
+      "age": 23,
+      "height": 170.0,
+      "current_weight": 62.0,
+      "target_weight": 60.0
+    },
+    "single_plan": {
+      "description": "Estimated results for individual exercises",
+      "activities": [
+        {
+          "name": "Walking",
+          "heart_rate": 98,
+          "total_days": 27,
+          "stages": [
+            {
+              "weight": 62.0,
+              "minutes": 210,
+              "start_day": 0,
+              "days": 27
+            }
+          ],
+          "initial_calories": 142.671142578125
+        },
+        {
+          "name": "Jogging",
+          "heart_rate": 138,
+          "total_days": 12,
+          "stages": [
+            {
+              "weight": 62.0,
+              "minutes": 180,
+              "start_day": 0,
+              "days": 12
+            }
+          ],
+          "initial_calories": 285.80419921875
+        },
+        {
+          "name": "Swimming",
+          "heart_rate": 118,
+          "total_days": 18,
+          "stages": [
+            {
+              "weight": 62.0,
+              "minutes": 180,
+              "start_day": 0,
+              "days": 16
+            },
+            {
+              "weight": 60.2,
+              "minutes": 210,
+              "start_day": 16,
+              "days": 2
+            }
+          ],
+          "initial_calories": 210.0496063232422
+        },
+        {
+          "name": "Sit_ups",
+          "heart_rate": 118,
+          "total_days": 18,
+          "stages": [
+            {
+              "weight": 62.0,
+              "minutes": 180,
+              "start_day": 0,
+              "days": 16
+            },
+            {
+              "weight": 60.2,
+              "minutes": 210,
+              "start_day": 16,
+              "days": 2
+            }
+          ],
+          "initial_calories": 210.0496063232422
+        },
+        {
+          "name": "Squats",
+          "heart_rate": 128,
+          "total_days": 15,
+          "stages": [
+            {
+              "weight": 62.0,
+              "minutes": 180,
+              "start_day": 0,
+              "days": 15
+            }
+          ],
+          "initial_calories": 248.50067138671875
+        },
+        {
+          "name": "Jumping_Jacks",
+          "heart_rate": 138,
+          "total_days": 12,
+          "stages": [
+            {
+              "weight": 62.0,
+              "minutes": 180,
+              "start_day": 0,
+              "days": 12
+            }
+          ],
+          "initial_calories": 285.80419921875
+        }
+      ]
+    },
+    "mixed_plan": {
+      "description": "Estimated result for combined exercise plan",
+      "plan": [
+        {
+          "name": "Mixed_Plan",
+          "total_days": 21,
+          "stages": [
+            {
+              "weight": 62.0,
+              "minutes": 180,
+              "start_day": 0,
+              "days": 21
+            }
+          ],
+          "initial_calories": {
+            "Jumping_Jacks": 285.80419921875,
+            "Jogging": 285.80419921875,
+            "Swimming": 210.0496063232422,
+            "Walking": 142.671142578125,
+            "Sit_ups": 210.0496063232422
+          },
+          "plan": {
+            "Jumping_Jacks": 2,
+            "Jogging": 2,
+            "Swimming": 1,
+            "Walking": 1,
+            "Sit_ups": 1
+          },
+          "heart_rates": {
+            "Jumping_Jacks": 138,
+            "Jogging": 138,
+            "Swimming": 118,
+            "Walking": 98,
+            "Sit_ups": 118
+          }
+        }
+      ]
+    }
+  }

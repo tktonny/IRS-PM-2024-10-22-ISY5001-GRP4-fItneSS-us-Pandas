@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calorie Estimation Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>Calorie Estimation Test</h1>
+    <button id="estimateBtn">Get Calorie Estimate</button>
+    <div id="result"></div>
+
+    <script>
+        const API_URL = 'http://localhost:5000'; // 确保这与您的 Flask 服务器地址匹配
+        const estimateBtn = document.getElementById('estimateBtn');
+        const resultDiv = document.getElementById('result');
+
+        estimateBtn.addEventListener('click', async () => {
+            try {
+                const token = localStorage.getItem('token'); // 假设token存储在localStorage中
+                
+                const response = await axios.get(`${API_URL}/estimate`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                resultDiv.innerHTML = `<pre>${JSON.stringify(response.data, null, 2)}</pre>`;
+            } catch (error) {
+                console.error('Full error:', error);
+                resultDiv.innerHTML = `Error: ${error.response ? error.response.data.error : error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>
