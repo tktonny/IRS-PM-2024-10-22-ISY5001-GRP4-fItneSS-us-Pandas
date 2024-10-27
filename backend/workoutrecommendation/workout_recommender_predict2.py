@@ -9,12 +9,12 @@ import os
 class WorkoutRecommender:
     def __init__(self):
         self.scaler = None
+        self.knn_model = None
         self.rf_avg = None
         self.rf_frequency = None
         self.rf_duration = None
         self.rf_water = None
         self.features = None
-        self.workout_types = None
         self.exercise_mapping = {
             'Strength': [
                 'Dumbbell Flat Bench Press', 'Barbell Bench Press', 'Bent-over Barbell Row',
@@ -28,53 +28,99 @@ class WorkoutRecommender:
         }
 
     def load_models(self, directory):
-        self.scaler = joblib.load(os.path.join(directory, 'scaler.joblib'))
-        self.rf_avg = joblib.load(os.path.join(directory, 'rf_avg.joblib'))
-        self.rf_frequency = joblib.load(os.path.join(directory, 'rf_frequency.joblib'))
-        self.rf_duration = joblib.load(os.path.join(directory, 'rf_duration.joblib'))
-        self.rf_water = joblib.load(os.path.join(directory, 'rf_water.joblib'))
-        self.workout_types = joblib.load(os.path.join(directory, 'workout_types.joblib'))
-        self.features = joblib.load(os.path.join(directory, 'features.joblib'))
+        try:
+            self.scaler = joblib.load(os.path.join(directory, 'scaler.joblib'))
+            self.knn_model = joblib.load(os.path.join(directory, 'knn_model.joblib'))
+            self.rf_avg = joblib.load(os.path.join(directory, 'rf_avg.joblib'))
+            self.rf_frequency = joblib.load(os.path.join(directory, 'rf_frequency.joblib'))
+            self.rf_duration = joblib.load(os.path.join(directory, 'rf_duration.joblib'))
+            self.rf_water = joblib.load(os.path.join(directory, 'rf_water.joblib'))
+            self.features = self.rf_avg.feature_names_in_
+        except Exception as e:
+            print(f"Error loading models: {e}")
 
     def recommend_workout(self, age, gender, weight, height, experience_level):
-        gender_numeric = 0 if gender.lower() == 'female' else 1
-        bmi = weight / (height ** 2)
-        
-        input_data = pd.DataFrame(columns=self.features)
-        input_data.loc[0] = 0  # 用0初始化所有列
-        
-        # 填充已知的特征值
-        input_data.loc[0, 'Age'] = age
-        input_data.loc[0, 'Gender'] = gender_numeric
-        input_data.loc[0, 'Weight (kg)'] = weight
-        input_data.loc[0, 'Height (m)'] = height
-        input_data.loc[0, 'BMI'] = bmi
-        input_data.loc[0, 'Experience_Level'] = experience_level
-        
-        predictions = []
-        for workout in self.workout_types:
-            input_data_copy = input_data.copy()
-            input_data_copy.loc[0, f'Workout_Type_{workout}'] = 1
+        try:
+            print("\n1. Loading models successful")
+            gender_numeric = 0 if gender.lower() == 'female' else 1
+            bmi = weight / (height ** 2)
+
+            # 直接使用模型加载的特征名创建数组
+            values = np.zeros(len(self.features))
+            values[0] = age  # Age
+            values[1] = gender_numeric   # Gender
+            values[2] = weight  # Weight
+            values[3] = height  # Height
+            values[4] = bmi  # BMI
+            values[5] = experience_level   # Experience
             
-            predicted_avg_bpm = self.rf_avg.predict(input_data_copy)[0]
-            predicted_frequency = self.rf_frequency.predict(input_data_copy)[0]
-            predicted_duration = self.rf_duration.predict(input_data_copy)[0]
-            predicted_water = self.rf_water.predict(input_data_copy)[0]
+            # Create DataFrame using the model's feature names
+            print("\n2. Creating input DataFrame...")
+            df = pd.DataFrame([values], columns=self.features)
+
+            print("\n3. Finding similar users with KNN...")
             
-            predictions.append({
-                'workout': workout,
-                'avg_bpm': round(predicted_avg_bpm),
-                'frequency': round(predicted_frequency),
-                'duration': round(predicted_duration, 2),
-                'water_intake': round(predicted_water, 2)
-            })
-        
-        predictions.sort(key=lambda x: x['frequency'], reverse=True)
-        top_predictions = predictions[:3]  # 推荐前3种运动
-        
-        return {
-            'recommended_workouts': top_predictions,
-        }
+            scaled_input = self.scaler.transform(df)
+            distances, indices = self.knn_model.kneighbors(scaled_input)
+
+            print("\n4. Processing similar users...")
+            workout_counts = {'Cardio': 0, 'HIIT': 0, 'Strength': 0, 'Yoga': 0}
+            for idx in indices[0]:
+                workout_types = self.knn_model._fit_X[idx][-4:]
+                if workout_types[0] > 0.5: workout_counts['Cardio'] += 1
+                if workout_types[1] > 0.5: workout_counts['HIIT'] += 1
+                if workout_types[2] > 0.5: workout_counts['Strength'] += 1
+                if workout_types[3] > 0.5: workout_counts['Yoga'] += 1
+
+            recommended_workouts = [k for k, v in sorted(workout_counts.items(), key=lambda x: x[1], reverse=True) if v > 0]
+            print(f"\n5. Recommended workouts: {recommended_workouts}")
+
+            predictions = []
+            print("\n6. Making predictions for each workout...")
+            for workout in recommended_workouts:
+                # 复制原始值数组
+                pred_values = values.copy()
+                
+                # 获取workout类型的索引位置
+                type_columns = ['Workout_Type_Cardio', 'Workout_Type_HIIT', 
+                              'Workout_Type_Strength', 'Workout_Type_Yoga']
+                type_indices = [list(self.features).index(col) for col in type_columns]
+                
+                # 重置所有workout type为0
+                for idx in type_indices:
+                    pred_values[idx] = 0
+                
+                # 设置当前workout type为1
+                current_type_idx = list(self.features).index(f'Workout_Type_{workout}')
+                pred_values[current_type_idx] = 1
+
+                # 创建预测DataFrame
+                pred_df = pd.DataFrame([pred_values], columns=self.features)
+
+                # 进行预测
+                predicted_avg_bpm = self.rf_avg.predict(pred_df)[0]
+                predicted_frequency = self.rf_frequency.predict(pred_df)[0]
+                predicted_duration = self.rf_duration.predict(pred_df)[0]
+                predicted_water = self.rf_water.predict(pred_df)[0]
+
+                predictions.append({
+                    'workout': workout,
+                    'avg_bpm': round(predicted_avg_bpm),
+                    'frequency': round(predicted_frequency),
+                    'duration': round(predicted_duration, 2),
+                    'water_intake': round(predicted_water, 2)
+                })
+
+            print("\n7. Predictions completed successfully!")
+            return {'recommended_workouts': predictions}
+
+        except Exception as e:
+            print(f"Error in recommend_workout: {str(e)}")
+            print(f"Model features: {self.features}")
+            if 'df' in locals():
+                print(f"DataFrame columns: {df.columns.tolist()}")
+            raise
+
 
     def print_recommendation(self, age, gender, weight, height, experience_level):
         recommendation = self.recommend_workout(age, gender, weight, height, experience_level)
@@ -103,17 +149,5 @@ class WorkoutRecommender:
             result.append(workout_info)
         return result
 
-# 使用示例
-if __name__ == "__main__":
-    recommender = WorkoutRecommender()
-    recommender.load_models('path_to_models')  # 请替换为实际的模型路径
 
-    # 打印推荐信息
-    print("Printed Recommendation:")
-    recommender.print_recommendation(30, 'Male', 75, 1.75, 2)
 
-    # 获取推荐变量
-    print("\nReturned Recommendation:")
-    recommendation = recommender.get_recommendation(30, 'Male', 75, 1.75, 2)
-    for rec in recommendation:
-        print(rec)
